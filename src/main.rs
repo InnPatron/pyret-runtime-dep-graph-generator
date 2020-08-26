@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, BufWriter, Write};
 
 use glob::{ GlobResult, glob };
 
@@ -9,10 +9,14 @@ mod graph;
 use graph::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>>{
+    let mut args = env::args();
+    args.next().unwrap();
+    let output_path = args.next().unwrap();
+
     let mut graph = Graph::new();
-    let omega_glob = env::args()
-        .skip(1)
+    let omega_glob = args
         .fold(Box::new(std::iter::empty()) as Box<dyn Iterator<Item=GlobResult>>, |acc, mut p| {
+            println!("Visiting: {}", p);
             p.push_str("/*");
             let mini_glob = glob(&p).unwrap();
             Box::new(acc.chain(mini_glob))
@@ -20,7 +24,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     for glob_res in omega_glob {
         let path = glob_res?;
-        dbg!(&path);
 
         let string_path = path.to_str().expect("Input path not utf8").to_string();
         let (_, _, ext) =  get_data(&string_path);
@@ -44,6 +47,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         }
 
     }
+
+    println!("Finished reading inputs...");
+    println!("Writing results to {}", output_path);
+    let output_file = File::create(&output_path)?;
+    let mut writer = BufWriter::new(output_file);
+    writer.write("digraph mygraph {\n".as_bytes())?;
+    graph.write_graph(&mut writer)?;
+    writer.write("\n}".as_bytes())?;
 
     Ok(())
 }

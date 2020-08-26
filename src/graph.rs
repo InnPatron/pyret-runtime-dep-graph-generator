@@ -1,3 +1,5 @@
+use std::io::{Write};
+
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::borrow::Borrow;
@@ -25,5 +27,22 @@ impl Graph {
                 e.insert(vec![to.into()]);
             }
         }
+    }
+
+    pub fn write_graph<T: Write>(&self, writer: &mut T) -> std::io::Result<()> {
+        for (from, tos) in self.graph.iter() {
+            for to in tos.iter() {
+                writer.write("\"".as_bytes())?;
+                writer.write(from.as_bytes())?;
+                writer.write("\"".as_bytes())?;
+                writer.write(" -> ".as_bytes())?;
+                writer.write("\"".as_bytes())?;
+                writer.write(to.as_bytes())?;
+                writer.write("\"".as_bytes())?;
+                writer.write(";\n".as_bytes())?;
+            }
+        }
+
+        Ok(())
     }
 }
