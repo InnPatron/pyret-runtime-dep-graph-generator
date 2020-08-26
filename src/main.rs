@@ -137,7 +137,7 @@ fn locate_requires(input: &str) -> Option<String> {
     if let Some(require_index) = input.find("require(\"") {
         let start = require_index + 9;
         let target = &input[start..];
-        let end = input.find("\"").unwrap() - 1;
+        let end = target.find("\"").unwrap();
         return Some((&target[..end]).to_owned());
     }
 
