@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     let omega_glob = args
         .fold(Box::new(std::iter::empty()) as Box<dyn Iterator<Item=GlobResult>>, |acc, mut p| {
             println!("Visiting: {}", p);
-            p.push_str("/*");
+            p.push_str("*");
             let mini_glob = glob(&p).unwrap();
             Box::new(acc.chain(mini_glob))
         });
@@ -71,15 +71,15 @@ fn generate_from_pyret<T: BufRead>(graph: &mut Graph, current: &str, input: &mut
 }
 
 fn locate_dep(input: &str) -> Option<String> {
-    if let Some(include_index) = input.find("include ") {
-        let input = &input[include_index + 8..];
+    if input.starts_with("include ") {
+        let input = &input[8..];
         if !input.starts_with("from") {
             return Some(strip_protocol_dep(input));
         }
     }
 
-    if let Some(import_index) = input.find("import ") {
-        let input = &input[import_index + 7..];
+    if input.starts_with("import ") {
+        let input = &input[7..];
         let end = input.find(" as ").unwrap();
         let input = &input[..end];
         return Some(strip_protocol_dep(input));
