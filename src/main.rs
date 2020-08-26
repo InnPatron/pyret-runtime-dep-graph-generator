@@ -78,18 +78,8 @@ fn generate_from_js<T: BufRead>(graph: &mut Graph, current: &str, input: &mut T)
 fn canon_require_path(input: &str) -> String {
     let mut result = String::new();
 
-    let file_name_index = match input.rfind("/") {
-        Some(i) => i + 1,
-        None => 0
-    };
-    let file_name = &input[file_name_index..];
-    let first_dot_index = file_name.find(".").expect("No file extension");
-    let ext = &file_name[first_dot_index..];
-    let file_stem = &file_name[..first_dot_index];
+    let ( file_name, file_stem, ext ) = get_data(input);
 
-    dbg!(file_name);
-    dbg!(file_stem);
-    dbg!(ext);
     if ext == ".arr.js" || ext == ".arr" {
         result.push_str(file_stem);
     } else if ext == ".js" ||  ext == ".ts" {
@@ -100,6 +90,19 @@ fn canon_require_path(input: &str) -> String {
 
 
     result
+}
+
+fn get_data(input: &str) -> ( &str, &str, &str ) {
+    let file_name_index = match input.rfind("/") {
+        Some(i) => i + 1,
+        None => 0
+    };
+    let file_name = &input[file_name_index..];
+    let first_dot_index = file_name.find(".").expect("No file extension");
+    let ext = &file_name[first_dot_index..];
+    let file_stem = &file_name[..first_dot_index];
+
+    ( file_name, file_stem, ext )
 }
 
 fn locate_requires(input: &str) -> Option<String> {
