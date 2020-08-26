@@ -7,13 +7,41 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
-fn main() {
-    let args: Vec<PathBuf> = env::args()
-        .skip(1)
-        .map(|p| PathBuf::from(p))
-        .collect();
+use glob::{ GlobResult, glob };
 
-    println!("{:?}", args);
+fn main() -> Result<(), Box<dyn std::error::Error>>{
+    let mut graph = Graph {
+        graph: HashMap::new()
+    };
+    let omega_glob = env::args()
+        .skip(1)
+        .fold(Box::new(std::iter::empty()) as Box<Iterator<Item=GlobResult>>, |acc, mut p| {
+            p.push_str("/*");
+            let mini_glob = glob(&p).unwrap();
+            Box::new(acc.chain(mini_glob))
+        });
+
+    for glob_res in omega_glob {
+        let path = glob_res?;
+        dbg!(&path);
+
+        let string_path = path.to_str().expect("Input path not utf8").to_string();
+        let canon_path = canon_require_path(&string_path);
+        let (_, _, ext) =  get_data(&string_path);
+
+        let file = File::open(path)?;
+        let mut reader = BufReader::new(file);
+        if ext == ".js" || ext == ".ts" || ext == ".arr.ts" || ext == ".arr.js" {
+            generate_from_js(&mut graph, &canon_path, &mut reader)?;
+        } else if ext == ".arr" {
+            generate_from_pyret(&mut graph, &canon_path, &mut reader)?;
+        } else {
+            panic!("Unknown top-level extension: {}", string_path);
+        }
+
+    }
+
+    Ok(())
 }
 
 fn generate_from_pyret<T: BufRead>(graph: &mut Graph, current: &str, input: &mut T) -> io::Result<()> {
@@ -150,6 +178,7 @@ mod tests {
         assert_eq!(canon_require_path("foo/bar.arr.js"), "bar");
         assert_eq!(canon_require_path("foo/bar.js"), "bar.js");
         assert_eq!(canon_require_path("foo/bar.ts"), "bar.ts");
+        assert_eq!(canon_require_path("foo/bar.arr"), "bar");
     }
 
     #[test]
