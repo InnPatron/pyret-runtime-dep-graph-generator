@@ -2,7 +2,6 @@ use std::env;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::hash::Hash;
 use std::path::PathBuf;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
@@ -26,17 +25,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         dbg!(&path);
 
         let string_path = path.to_str().expect("Input path not utf8").to_string();
-        let canon_path = canon_require_path(&string_path);
         let (_, _, ext) =  get_data(&string_path);
 
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         if ext == ".js" || ext == ".ts" || ext == ".arr.ts" || ext == ".arr.js" {
+            let canon_path = canon_require_path(&string_path);
             generate_from_js(&mut graph, &canon_path, &mut reader)?;
         } else if ext == ".arr" {
+            let canon_path = canon_require_path(&string_path);
             generate_from_pyret(&mut graph, &canon_path, &mut reader)?;
+        } else if ext == ".arr.json" || ext == ".json" {
+            continue;
         } else {
-            panic!("Unknown top-level extension: {}", string_path);
+            panic!("Unknown top-level extension: \"{}\" [{}]", ext, string_path);
         }
 
     }
@@ -108,12 +110,14 @@ fn canon_require_path(input: &str) -> String {
 
     let ( file_name, file_stem, ext ) = get_data(input);
 
-    if ext == ".arr.js" || ext == ".arr" {
+    if ext == ".arr.js" || ext == ".arr"|| ext == ".arr.ts" {
         result.push_str(file_stem);
     } else if ext == ".js" ||  ext == ".ts" {
         result.push_str(file_name);
+    } else if ext == "" {
+        result.push_str(file_name);
     } else {
-        panic!("Unable to handle extension for: {}", input);
+        panic!("Unable to handle extension: \"{}\" [{}]", ext, input);
     }
 
 
@@ -126,9 +130,17 @@ fn get_data(input: &str) -> ( &str, &str, &str ) {
         None => 0
     };
     let file_name = &input[file_name_index..];
-    let first_dot_index = file_name.find(".").expect("No file extension");
-    let ext = &file_name[first_dot_index..];
-    let file_stem = &file_name[..first_dot_index];
+    let (file_stem, ext) = match file_name.find(".") {
+        Some(first_dot_index) => {
+            let ext = &file_name[first_dot_index..];
+            let file_stem = &file_name[..first_dot_index];
+            (file_stem, ext)
+        }
+
+        None => {
+            (file_name, "")
+        }
+    };
 
     ( file_name, file_stem, ext )
 }
