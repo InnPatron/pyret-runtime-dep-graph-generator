@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         } else if ext == ".arr" {
             let canon_path = canon_require_path(&string_path);
             generate_from_pyret(&mut graph, &canon_path, &mut reader)?;
-        } else if ext == ".arr.json" || ext == ".json" || ext.contains("swp") {
+        } else if ext == ".arr.json" || ext == ".json" || ext.contains("swp") || ext.contains("stopped") {
             continue;
         } else {
             panic!("Unknown top-level extension: \"{}\" [{}]", ext, string_path);
