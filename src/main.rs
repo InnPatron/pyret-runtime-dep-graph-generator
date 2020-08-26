@@ -1,5 +1,4 @@
 use std::env;
-use std::path::PathBuf;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
@@ -13,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
     let mut graph = Graph::new();
     let omega_glob = env::args()
         .skip(1)
-        .fold(Box::new(std::iter::empty()) as Box<Iterator<Item=GlobResult>>, |acc, mut p| {
+        .fold(Box::new(std::iter::empty()) as Box<dyn Iterator<Item=GlobResult>>, |acc, mut p| {
             p.push_str("/*");
             let mini_glob = glob(&p).unwrap();
             Box::new(acc.chain(mini_glob))
