@@ -27,6 +27,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         let string_path = path.to_str().expect("Input path not utf8").to_string();
         let (_, _, ext) =  get_data(&string_path);
 
+        if !path.is_file() {
+            continue
+        }
+
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         if ext == ".js" || ext == ".ts" || ext == ".arr.ts" || ext == ".arr.js" {
@@ -35,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>{
         } else if ext == ".arr" {
             let canon_path = canon_require_path(&string_path);
             generate_from_pyret(&mut graph, &canon_path, &mut reader)?;
-        } else if ext == ".arr.json" || ext == ".json" {
+        } else if ext == ".arr.json" || ext == ".json" || ext.contains("swp") {
             continue;
         } else {
             panic!("Unknown top-level extension: \"{}\" [{}]", ext, string_path);
